@@ -8,8 +8,6 @@ const cells = document.querySelectorAll('.field-cell');
 const startMessage = document.querySelector('.message-start');
 const loseMessage = document.querySelector('.message-lose');
 
-startButton.classList.add('restart');
-
 function renderBoard(board) {
   let index = 0;
 
@@ -24,6 +22,7 @@ function renderBoard(board) {
       if (value !== 0) {
         cell.classList.add(`field-cell--${value}`);
       }
+
       index += 1;
     }
   }
@@ -41,21 +40,26 @@ function handleStart() {
   game.start();
   renderBoard(game.getState());
   startMessage.classList.add('hidden');
+
+  startButton.textContent = 'Restart';
+  startButton.classList.remove('start');
+  startButton.classList.add('restart');
 }
 
 function handleRestart() {
   game.restart();
   renderBoard(game.getState());
+  scoreElement.textContent = '0';
   startMessage.classList.remove('hidden');
   loseMessage.classList.add('hidden');
+
+  startButton.textContent = 'Start';
+  startButton.classList.remove('restart');
+  startButton.classList.add('start');
 }
 
 startButton.addEventListener('click', () => {
-  if (
-    game.getStatus() === 'idle' ||
-    game.getStatus() === 'win' ||
-    game.getStatus() === 'lose'
-  ) {
+  if (startButton.classList.contains('start')) {
     handleStart();
   } else {
     handleRestart();
