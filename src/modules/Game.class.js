@@ -1,4 +1,3 @@
-// src/modules/Game.class.js
 export class Game {
   constructor(
     initialState = [
@@ -35,7 +34,9 @@ export class Game {
   }
 
   restart() {
-    this.start();
+    this.board = this.initialState.map((row) => [...row]);
+    this.score = 0;
+    this.status = 'idle';
   }
 
   addNewNumber() {
@@ -53,7 +54,6 @@ export class Game {
       return false;
     }
 
-    // renomeando para evitar conflito com 'j' do loop
     const { i: row, j: col } = empty[Math.floor(Math.random() * empty.length)];
 
     this.board[row][col] = Math.random() < 0.9 ? 2 : 4;
@@ -85,7 +85,44 @@ export class Game {
     return { newLine, scoreGain };
   }
 
-  moveLeft() {
+  move(direction) {
+    if (this.status !== 'playing') {
+      return false;
+    }
+
+    let moved = false;
+
+    switch (direction) {
+      case 'left':
+        moved = this.moveLeftInternal();
+        break;
+      case 'right':
+        moved = this.moveRightInternal();
+        break;
+      case 'up':
+        moved = this.moveUpInternal();
+        break;
+      case 'down':
+        moved = this.moveDownInternal();
+        break;
+      default:
+        break;
+    }
+
+    if (moved) {
+      this.addNewNumber();
+
+      if (this.checkWin()) {
+        this.status = 'win';
+      } else if (this.checkLose()) {
+        this.status = 'lose';
+      }
+    }
+
+    return moved;
+  }
+
+  moveLeftInternal() {
     let moved = false;
 
     for (let i = 0; i < 4; i += 1) {
@@ -94,6 +131,7 @@ export class Game {
       if (newLine.toString() !== this.board[i].toString()) {
         moved = true;
       }
+
       this.board[i] = newLine;
       this.score += scoreGain;
     }
@@ -101,7 +139,7 @@ export class Game {
     return moved;
   }
 
-  moveRight() {
+  moveRightInternal() {
     let moved = false;
 
     for (let i = 0; i < 4; i += 1) {
@@ -112,6 +150,7 @@ export class Game {
       if (finalLine.toString() !== this.board[i].toString()) {
         moved = true;
       }
+
       this.board[i] = finalLine;
       this.score += scoreGain;
     }
@@ -119,7 +158,7 @@ export class Game {
     return moved;
   }
 
-  moveUp() {
+  moveUpInternal() {
     let moved = false;
 
     for (let col = 0; col < 4; col += 1) {
@@ -129,21 +168,24 @@ export class Game {
         this.board[2][col],
         this.board[3][col],
       ];
+
       const { newLine, scoreGain } = this.compressAndMerge(column);
 
       for (let row = 0; row < 4; row += 1) {
         if (this.board[row][col] !== newLine[row]) {
           moved = true;
         }
+
         this.board[row][col] = newLine[row];
       }
+
       this.score += scoreGain;
     }
 
     return moved;
   }
 
-  moveDown() {
+  moveDownInternal() {
     let moved = false;
 
     for (let col = 0; col < 4; col += 1) {
@@ -161,19 +203,35 @@ export class Game {
         if (this.board[row][col] !== finalCol[row]) {
           moved = true;
         }
+
         this.board[row][col] = finalCol[row];
       }
+
       this.score += scoreGain;
     }
 
     return moved;
   }
 
+  moveLeft() {
+    return this.move('left');
+  }
+
+  moveRight() {
+    return this.move('right');
+  }
+
+  moveUp() {
+    return this.move('up');
+  }
+
+  moveDown() {
+    return this.move('down');
+  }
+
   checkWin() {
     for (const row of this.board) {
       if (row.includes(2048)) {
-        this.status = 'win';
-
         return true;
       }
     }
@@ -199,45 +257,21 @@ export class Game {
       }
     }
 
-    this.status = 'lose';
-
     return true;
   }
 
   initializeControls(renderBoard) {
     document.addEventListener('keydown', (e) => {
-      if (this.status !== 'playing') {
-        return;
-      }
+      const keyMap = {
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+        ArrowUp: 'up',
+        ArrowDown: 'down',
+      };
 
-      let moved = false;
-
-      switch (e.key) {
-        case 'ArrowUp':
-          moved = this.moveUp();
-          break;
-        case 'ArrowDown':
-          moved = this.moveDown();
-          break;
-        case 'ArrowLeft':
-          moved = this.moveLeft();
-          break;
-        case 'ArrowRight':
-          moved = this.moveRight();
-          break;
-        default:
-          break;
-      }
-
-      if (moved) {
-        this.addNewNumber();
+      if (keyMap[e.key]) {
+        this.move(keyMap[e.key]);
         renderBoard(this.getState());
-
-        if (this.checkWin()) {
-          alert('Você venceu!');
-        } else if (this.checkLose()) {
-          alert('Fim de jogo!');
-        }
       }
     });
   }
